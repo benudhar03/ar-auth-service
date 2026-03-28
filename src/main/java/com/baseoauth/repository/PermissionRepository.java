@@ -5,11 +5,11 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.baseoauth.entity.PermissionEntity;
+import com.baseoauth.entity.Permission;
 
 @Repository
-public interface PermissionRepository extends JpaRepository<PermissionEntity,Long> {
+public interface PermissionRepository extends JpaRepository<Permission,Long> {
 
-	Optional<PermissionEntity> findByName(String name);
+	Optional<Permission> findByName(String name);
 
 }

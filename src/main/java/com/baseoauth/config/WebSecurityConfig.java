@@ -3,74 +3,75 @@ package com.baseoauth.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler;
-import org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint;
-import org.springframework.security.web.access.channel.ChannelProcessingFilter;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
+@EnableMethodSecurity(prePostEnabled = true)
+public class WebSecurityConfig {
 
 	@Autowired
 	private UserDetailsService userDetailsService;
-	
+
+	@Autowired
+	private CorsFilter corsFilter;
+
 	@Bean
-	protected AuthenticationManager getAuthenticationManager() throws Exception {
-		return super.authenticationManagerBean();
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+		return authConfig.getAuthenticationManager();
 	}
-	
+
 	@Bean
-	PasswordEncoder passwordEncoder() {
+	public PasswordEncoder passwordEncoder() {
 		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
 	}
 
-	@Override
-	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
-	}
-	 
-    @Bean
-	public CorsFilter corsFilterBean() throws Exception {
-    	CorsFilter corsFilter = new CorsFilter();
-		return corsFilter;
-	}
-    @Bean
-    public OAuth2AuthenticationEntryPoint clientAuthenticationEntryPoint(){
-    	OAuth2AuthenticationEntryPoint unauthorizedEntry = new OAuth2AuthenticationEntryPoint();
-    	return unauthorizedEntry;
-    }
-
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
-		.csrf().disable()
-		 .anonymous().disable()
-	        .exceptionHandling().authenticationEntryPoint(clientAuthenticationEntryPoint()).and()
-			// don't create session
-			.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-			//.and().authorizeRequests().antMatchers(HttpMethod.OPTIONS,"/oauth/token","/oauth/token/").permitAll()
-			.and().authorizeRequests().antMatchers("/admin-rest/api/**").permitAll()
-	        .and().authorizeRequests().antMatchers("/api/**","/member/**").authenticated()
-	        .and().exceptionHandling().accessDeniedHandler(new OAuth2AccessDeniedHandler())
-	        .and().addFilterBefore(corsFilterBean(), ChannelProcessingFilter.class);
-	}	
-	
-	@Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring().antMatchers("/admin-rest/api/**")
-        .antMatchers("/baseAuth2Web/**");
-    }
-	
-	
+				.csrf(csrf -> csrf.disable())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests(authz -> authz
+						.requestMatchers("/admin-rest/api/**").permitAll()
+						.requestMatchers("/baseAuth2Web/**").permitAll()
+						.requestMatchers("/api/**", "/member/**").authenticated()
+						.anyRequest().authenticated()
+				)
+				.exceptionHandling(exceptions -> exceptions
+						.authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+						.accessDeniedHandler(accessDeniedHandler())
+				)
+				.addFilterBefore(corsFilter, BasicAuthenticationFilter.class);
+
+		return http.build();
+	}
+
+	@Bean
+	public AccessDeniedHandler accessDeniedHandler() {
+		return (request, response, accessDeniedException) -> {
+			response.setStatus(403);
+			response.setContentType("application/json");
+			response.getWriter().write("{\"error\": \"Access Denied\"}");
+		};
+	}
+
+	@Bean
+	public BasicAuthenticationEntryPoint authenticationEntryPoint() {
+		BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
+		entryPoint.setRealmName("baseoauth");
+		return entryPoint;
+	}
 }

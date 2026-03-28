@@ -1,49 +1,78 @@
 package com.baseoauth.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
-import lombok.Data;
-
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "role", schema = "admin")
-@SequenceGenerator(name="role_seq", sequenceName = "role_sequence",schema="admin", initialValue=1, allocationSize=1)
-public class Role {
+public class Role implements Serializable {
+
+	@Serial
+	private static final long serialVersionUID = 1L;
 
 	@Id
-	@Column(name = "role_id")
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "role_seq")
-	private long roleId;
-	
-	@Column(name = "role_name", unique = true)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Long id;
+
+	@Column(name = "role_name", unique = true, nullable = false, length = 50)
 	private String roleName;
-	
-	@Column(name = "role_desc")
-	private String roleDesc;
-	
-	@ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    @JoinTable(
-            name = "permission_role", schema = "admin",
-            joinColumns = {
-            		@JoinColumn(name = "role_id", referencedColumnName = "role_id",
-            				nullable = false, updatable = false)
-            },
-            inverseJoinColumns = {
-            		@JoinColumn(name = "permission_id", referencedColumnName = "permission_id",
-            				nullable = false, updatable = false)
-            }
-    )
-	private Set<PermissionEntity> permissions;
+
+	@Column(name = "description", length = 200)
+	private String description;
+
+	@ManyToMany(fetch = FetchType.EAGER)
+	@JoinTable(
+			name = "role_permission",
+			schema = "admin",
+			joinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"),
+			inverseJoinColumns = @JoinColumn(name = "permission_id", referencedColumnName = "id")
+	)
+	private Set<Permission> permissions = new HashSet<>();
+
+	@ManyToMany(mappedBy = "roles")
+	private Set<UserEntity> users = new HashSet<>();
+
+	@CreationTimestamp
+	@Column(name = "created_at", updatable = false)
+	private LocalDateTime createdAt;
+
+	@UpdateTimestamp
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
+
+	// Convenience methods
+	public void addPermission(Permission permission) {
+		if (permissions == null) {
+			permissions = new HashSet<>();
+		}
+		permissions.add(permission);
+	}
+
+	public void removePermission(Permission permission) {
+		if (permissions != null) {
+			permissions.remove(permission);
+		}
+	}
+
+	// Explicit getter methods (optional, but ensures clarity)
+	public String getRoleName() {
+		return roleName;
+	}
+
+	public Set<Permission> getPermissions() {
+		return permissions;
+	}
 }

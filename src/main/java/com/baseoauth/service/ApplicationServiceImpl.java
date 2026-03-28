@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import com.baseoauth.dto.PermissionModel;
 import com.baseoauth.dto.RoleModel;
 import com.baseoauth.dto.UserModel;
-import com.baseoauth.entity.PermissionEntity;
+import com.baseoauth.entity.Permission;
 import com.baseoauth.entity.Role;
 import com.baseoauth.entity.UserEntity;
 import com.baseoauth.repository.PermissionRepository;
@@ -74,7 +74,7 @@ public class ApplicationServiceImpl implements ApplicationService{
 	public ResponseEntity<? extends AbstractResponse> createRole(RoleModel roleModel) {
 		try {
 			Role role = new Role();
-			Set<PermissionEntity> permissions = new HashSet<>();
+			Set<Permission> permissions = new HashSet<>();
 			System.out.println(roleModel.toString());
 			roleModel.setRoleName(roleModel.getRoleName().toUpperCase());
 			Optional<Role> optionalRole = roleRepository.findByRoleName(roleModel.getRoleName());
@@ -82,7 +82,7 @@ public class ApplicationServiceImpl implements ApplicationService{
 				return new ResponseEntity<>(new StatusResponse(201, "Role Exist, Please avoid duplication"), HttpStatus.BAD_REQUEST);
 			}
 			roleModel.getPermissions().stream().forEach(perm-> {
-				PermissionEntity entity = permissionRepository.findById(perm.getId()).get();
+				Permission entity = permissionRepository.findById(perm.getId()).get();
 				permissions.add(entity);
 			});			
 			BeanUtils.copyProperties(roleModel,role);
@@ -100,9 +100,9 @@ public class ApplicationServiceImpl implements ApplicationService{
 	@Override
 	public ResponseEntity<? extends AbstractResponse> createPermission(PermissionModel permissionModel) {
 		try {
-			PermissionEntity permission =  new PermissionEntity();
+			Permission permission =  new Permission();
 			permissionModel.setName(permissionModel.getName().toUpperCase());
-			Optional<PermissionEntity> optionalPermission = permissionRepository.findByName(permissionModel.getName());			
+			Optional<Permission> optionalPermission = permissionRepository.findByName(permissionModel.getName());			
 			if (optionalPermission.isPresent()) {
 				return new ResponseEntity<>(new StatusResponse(201, "Permission Exist, Please avoid duplication"), HttpStatus.BAD_REQUEST);
 			}			
