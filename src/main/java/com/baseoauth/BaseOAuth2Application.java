@@ -2,21 +2,24 @@ package com.baseoauth;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
-@EnableJpaRepositories(basePackages = {"com.baseoauth.repository"})
-@EnableResourceServer
-@EnableWebSecurity
-@EnableTransactionManagement
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@ConfigurationPropertiesScan
+@EnableJpaAuditing
+@EnableAsync
 public class BaseOAuth2Application {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BaseOAuth2Application.class, args);
+		SpringApplication application = new SpringApplication(BaseOAuth2Application.class);
+		application.setAdditionalProfiles(getActiveProfile());
+		application.run(args);
+	}
+
+	private static String getActiveProfile() {
+		String profile = System.getProperty("spring.profiles.active");
+		return profile != null ? profile : "default";
 	}
 }
