@@ -66,7 +66,26 @@
 			<artifactId>spring-security-oauth2-authorization-server</artifactId>
 			<version>1.2.4</version>
 		</dependency>
+		<!-- OpenAPI 3 (Swagger) for Spring Boot 3.x -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.5.0</version>
+		</dependency>
 
+		<!-- Optional: For Spring Security support -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+			<version>2.5.0</version>
+		</dependency>
+
+		<!-- Optional: For JPA support (shows schemas) -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-common</artifactId>
+			<version>2.5.0</version>
+		</dependency>
 		<!-- Database -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
